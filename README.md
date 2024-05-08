@@ -23,9 +23,18 @@ From there, you will have to choose a model to use. The default model is `gpt-3.
 
 Keep in mind, I store your OpenAI api key (somewhat insecurely) in the `.key` file at the root of the program. I welcome any pull requests that improve this security.
 
-### Running the game
+### Running the game (compiled)
 
 Just run InfiniteStory.exe, and follow the prompts to get set up.
+
+### Running the game (source)
+
+To run the game from source, you will need to have dotnet 8 installed. You can run the game by running the following commands:
+
+```bash
+dotnet restore
+dotnet run
+```
 
 ## Contributing
 
