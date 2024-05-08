@@ -1,7 +1,0 @@
-**Private Notes:**
-
-* Location: Market Square
-* Player actions: None
-* Inventory: Empty
-* Relationships: Unknown
-* World state changes: City Watch on high alert, Shady Characters plotting something.

@@ -6,7 +6,6 @@ using System.IO;
 public class ChatService
 {
     private readonly HttpClient _httpClient;
-    private readonly GameService _gameService;
     private readonly ChatHistoryService _chatHistoryService;
     private readonly string _stateFilePath = "GameStateNote.txt";
     private readonly string _separator = "||";
@@ -18,12 +17,11 @@ public class ChatService
     "Use two pipe characters: || to separate your public narrative from your private notes. The separator should be used only once per turn. " +
     "Ensure all relevant details are included in your notes as they are cleared each turn. These notes are confidential and " +
     "should not be revealed to the player. Your goal is to maintain continuity and coherence in the game world, fostering an engaging " +
-    "and interactive experience for the player.";
+    "and interactive experience for the player. Don't specifically mention anything about the game being an RPG, text-based, or gamemastered.";
 
 
-    public ChatService(GameService gameService, ChatHistoryService chatHistoryService)
+    public ChatService(ChatHistoryService chatHistoryService)
     {
-        _gameService = gameService;
         _chatHistoryService = chatHistoryService;
         _httpClient = new HttpClient();
     }

@@ -8,12 +8,9 @@ namespace TextBasedRPG
         static async Task Main(string[] args)
         {
             var serviceProvider = new ServiceCollection()
-                .AddSingleton<GameService>()
                 .AddSingleton<ChatService>()
                 .AddSingleton<ChatHistoryService>()
                 .BuildServiceProvider();
-
-            var gameService = serviceProvider.GetService<GameService>();
             var aiService = serviceProvider.GetService<ChatService>();
             var chatHistory = serviceProvider.GetService<ChatHistoryService>();
 
