@@ -7,17 +7,38 @@ namespace TextBasedRPG
     {
         static async Task Main(string[] args)
         {
+            var console = AnsiConsole.Console;
+            console.Clear();
+
+            string aiProvider = console.Prompt(new SelectionPrompt<string>()
+                .Title("Choose your AI provider:")
+                .AddChoices(new[] { "OpenAI", "Ollama" }));
+
+            var apiKey = "";
+            if (aiProvider == "OpenAI")
+            {
+                if (File.Exists(".key"))
+                {
+                    apiKey = File.ReadAllText(".key");
+                }
+                else
+                {
+                    apiKey = console.Prompt(new TextPrompt<string>("Enter your OpenAI API key:")
+                        .PromptStyle("aqua"));
+                    File.WriteAllText(".key", apiKey);
+                }
+            }
+
             var serviceProvider = new ServiceCollection()
-                .AddSingleton<ChatService>()
+                .AddSingleton<ChatService>(provider => new ChatService(provider.GetService<ChatHistoryService>()!, aiProvider, apiKey))
                 .AddSingleton<ChatHistoryService>()
                 .BuildServiceProvider();
+
             var aiService = serviceProvider.GetService<ChatService>();
             var chatHistory = serviceProvider.GetService<ChatHistoryService>();
 
             initNotes();
 
-            var console = AnsiConsole.Console;
-            console.Clear();
             console.Write(new Panel("[bold yellow]Welcome to the game![/] \nTell me when you are ready to start. Type 'exit' to quit.")
                 .RoundedBorder()
                 .BorderColor(Color.Yellow));
@@ -48,8 +69,20 @@ namespace TextBasedRPG
 
         static void initNotes()
         {
+            // Check if a file called "StoryPrompt.txt" exists in the current directory, 
+            // if so, copy the contents to a new file called "GameStateNote.txt"
+
             var stateFilePath = Path.Combine(Environment.CurrentDirectory, "GameStateNote.txt");
-            File.WriteAllText(stateFilePath,
+            var storyPromptFilePath = Path.Combine(Environment.CurrentDirectory, "StoryPrompt.txt");
+            if (File.Exists(storyPromptFilePath))
+            {
+                var storyPrompt = File.ReadAllText(storyPromptFilePath);
+                stateFilePath = Path.Combine(Environment.CurrentDirectory, "GameStateNote.txt");
+                File.WriteAllText(stateFilePath, storyPrompt);
+            }
+            else
+            {
+                File.WriteAllText(stateFilePath,
     @"Location: Market Square
 - Description: The central hub of commerce and interaction in the city, bustling with activity.
 - Characters:
@@ -61,7 +94,7 @@ namespace TextBasedRPG
 - Vendors:
   - Exotic Goods Sellers: Eager to sell exotic items.
   - Skill Buyers: Interested in buying services or skills from adventurers.");
-
+            }
         }
     }
 }

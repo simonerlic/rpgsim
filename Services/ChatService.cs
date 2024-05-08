@@ -16,14 +16,20 @@ public class ChatService
     "2. Private notes that track crucial game elements such as player actions, relationships, inventory, and world state changes. " +
     "Use two pipe characters: || to separate your public narrative from your private notes. The separator should be used only once per turn. " +
     "Ensure all relevant details are included in your notes as they are cleared each turn. These notes are confidential and " +
-    "should not be revealed to the player. Your goal is to maintain continuity and coherence in the game world, fostering an engaging " +
-    "and interactive experience for the player. Don't specifically mention anything about the game being an RPG, text-based, or gamemastered.";
+    "should NEVER be revealed to the player. If asked about them, play coy. Your goal is to maintain continuity and coherence in the game world, " +
+    "fostering an engaging and interactive experience for the player. Don't specifically mention anything about the game being an RPG, text-based, " +
+    "or gamemastered.";
+    private readonly string _aiProvider;
+    private string _endpoint;
+    private readonly string _apiKey;
 
-
-    public ChatService(ChatHistoryService chatHistoryService)
+    public ChatService(ChatHistoryService chatHistoryService, string aiProvider, string? apiKey = null)
     {
         _chatHistoryService = chatHistoryService;
         _httpClient = new HttpClient();
+        _aiProvider = aiProvider;
+        _apiKey = apiKey ?? "";
+        _endpoint = _aiProvider == "OpenAI" ? "https://api.openai.com/v1/chat/completions" : "http://localhost:11434/api/generate";
     }
 
     public async Task<string> GetResponse(string userInput)
@@ -32,6 +38,18 @@ public class ChatService
         string stateNotes = File.ReadAllText(_stateFilePath);
 
         var prompt = $"{_systemPrompt}\n{previousDialogues}\n{userInput}\nGAME NOTES:\n{stateNotes}";
+        if (_aiProvider == "OpenAI")
+        {
+            return await GetOpenAIResponse(prompt);
+        }
+        else
+        {
+            return await GetOllamaResponse(prompt);
+        }
+    }
+
+    private async Task<string> GetOllamaResponse(string prompt)
+    {
         var requestData = new
         {
             model = "llama3",
@@ -75,6 +93,59 @@ public class ChatService
         return "Failed to get response from AI";
     }
 
+    private async Task<string> GetOpenAIResponse(string userInput)
+    {
+        // Construct the JSON message history including the system, previous dialogues, and user input
+        var messages = new List<object>
+        {
+            new { role = "system", content = _systemPrompt }
+        };
+
+        var dialogues = _chatHistoryService.GetHistory().TakeLast(20).ToList(); // Get the last 20 entries (10 turns)
+        foreach (var entry in dialogues)
+        {
+            messages.Add(new { role = "user", content = entry.User });
+            messages.Add(new { role = "assistant", content = entry.AI });
+        }
+        messages.Add(new { role = "user", content = userInput });
+
+        var postData = new
+        {
+            model = "gpt-3.5-turbo",
+            messages = messages
+        };
+
+        // Configure HTTP request headers
+        _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+        _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", postData);
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<OpenAIResponse>();
+                var lastResponse = apiResponse!.choices.Last().message.content;
+
+                // Handle separator for notes
+                var parts = lastResponse.Split(new[] { _separator }, 2, StringSplitOptions.RemoveEmptyEntries);
+                var textResponse = parts[0].Trim();
+                if (parts.Length > 1)
+                {
+                    SaveStateToFile(parts[1].Trim()); // Save the game notes
+                }
+                return textResponse;
+            }
+            else
+            {
+                return "Failed to get response from OpenAI: " + response.ReasonPhrase;
+            }
+        }
+        catch (Exception ex)
+        {
+            return "Error contacting OpenAI: " + ex.Message;
+        }
+    }
     private string GetPreviousDialogues()
     {
         var history = _chatHistoryService.GetHistory().TakeLast(10).ToList();  // Get the last 10 entries (5 turns)
@@ -99,6 +170,20 @@ public class ChatService
         public required string response { get; set; }
         public bool done { get; set; }
         public required int[] context { get; set; }
+    }
+
+    // OpenAI Response class to deserialize the response
+    public class OpenAIResponse
+    {
+        public required Choice[] choices { get; set; }
+        public class Choice
+        {
+            public required Message message { get; set; }
+        }
+        public class Message
+        {
+            public required string content { get; set; }
+        }
     }
 }
 

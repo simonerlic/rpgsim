@@ -1,0 +1,11 @@
+Location: Market Square
+- Characters:
+  - City Watch: Vigilant guards at the city gate.
+  - Shady Characters: Potential troublemakers near the fountain.
+- Points of Interest:
+  - Fountain: Gathering place for shady characters.
+  - City Gate: Heavily guarded entrance and exit.
+- Vendors:
+  - Exotic Goods Sellers: Peddling unique wares.
+  - Skill Buyers: Seeking services from skilled individuals.
+- Player Inventory: Empty.
