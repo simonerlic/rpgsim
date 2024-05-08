@@ -14,13 +14,13 @@ public class ChatService
     "responding to their actions and decisions. At the end of each turn, you must provide two types of information: " +
     "1. A narrative response to the player's actions, guiding them through the game world without suggesting specific actions. " +
     "2. Private notes that track crucial game elements such as player actions, relationships, inventory, and world state changes. " +
-    "Use two pipe characters: || to separate your public narrative from your private notes. The separator should be used only once per turn. " +
+    "Use two pipe characters: || to separate your public narrative from your private notes. Only provide the narrative before the separator. " +
     "Ensure all relevant details are included in your notes as they are cleared each turn. These notes are confidential and " +
-    "should NEVER be revealed to the player. If asked about them, play coy. Your goal is to maintain continuity and coherence in the game world, " +
-    "fostering an engaging and interactive experience for the player. Don't specifically mention anything about the game being an RPG, text-based, " +
-    "or gamemastered.";
+    "should not be revealed to the player. Your goal is to maintain continuity and coherence in the game world, fostering an engaging " +
+    "and interactive experience for the player. Focus on descriptive storytelling, rather than game mechanics or rules. " +
+    "Give dialogue, descriptions, and reactions that immerse the player in the world you create. Good luck and have fun!";
+
     private readonly string _aiProvider;
-    private string _endpoint;
     private readonly string _apiKey;
     private readonly string _aiModel;
 
@@ -31,15 +31,22 @@ public class ChatService
         _aiProvider = aiProvider;
         _apiKey = apiKey ?? "";
         _aiModel = aiModel ?? "";
-        _endpoint = _aiProvider == "OpenAI" ? "https://api.openai.com/v1/chat/completions" : "http://localhost:11434/api/generate";
     }
 
-    public async Task<string> GetResponse(string userInput)
+    public async Task<string> GetResponse(string userInput, bool isNewSession = false)
     {
         string previousDialogues = GetPreviousDialogues();
         string stateNotes = File.ReadAllText(_stateFilePath);
+        StringBuilder promptBuilder = new StringBuilder();
 
-        var prompt = $"{_systemPrompt}\n{previousDialogues}\n{userInput}\nGAME NOTES:\n{stateNotes}";
+        promptBuilder.AppendLine(_systemPrompt);
+        promptBuilder.AppendLine(previousDialogues);
+        promptBuilder.AppendLine(userInput);
+        promptBuilder.AppendLine("Notes:");
+        promptBuilder.AppendLine(stateNotes);
+
+        var prompt = promptBuilder.ToString();
+
         if (_aiProvider == "OpenAI")
         {
             return await GetOpenAIResponse(prompt);
@@ -49,6 +56,7 @@ public class ChatService
             return await GetOllamaResponse(prompt);
         }
     }
+
 
     private async Task<string> GetOllamaResponse(string prompt)
     {
@@ -155,8 +163,9 @@ public class ChatService
         foreach (var entry in history)
         {
             dialogues.AppendLine($"User: {entry.User}");
-            dialogues.AppendLine($"AI: {entry.AI}");
+            dialogues.AppendLine($"Game Master: {entry.AI}");
         }
+
         return dialogues.ToString();
     }
 
