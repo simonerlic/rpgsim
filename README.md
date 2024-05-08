@@ -14,10 +14,10 @@ To get started, take a look at the `StoryPrompt.txt` file. This file contains no
 
 ### Running inference
 
-You are able to either run the AI locally (through Ollama) or use the OpenAI API. To run the AI locally, you will need to install Ollama and llama3. To use the OpenAI API, you will need to set up an account and get an API key.
+You are able to either run the AI locally through **Ollama**, or use the **OpenAI** API.
 
-- Open AI
-- Ollama
+> [!NOTE]
+> To run the AI locally, you will need to install Ollama and llama3. To use the OpenAI API, you will need to set up an account and get an API key.
 
 From there, you will have to choose a model to use. The default model is `gpt-3.5-turbo` for when using OpenAI, and `llama3` when running through Ollama- but you can choose any model that is supported by OpenAI or installed on Ollama (e.g. gpt-4, mistral, etc.)
 
@@ -30,3 +30,7 @@ Just run InfiniteStory.exe, and follow the prompts to get set up.
 ## Contributing
 
 If you would like to contribute to the project, feel free to fork the repository and make a pull request. I am always looking for ways to improve the game, and I welcome any contributions.
+
+### Goals
+
+- Add more API options for the player to choose from (Cohere, Antropic, etc.)
