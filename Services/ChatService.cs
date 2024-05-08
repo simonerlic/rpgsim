@@ -22,13 +22,15 @@ public class ChatService
     private readonly string _aiProvider;
     private string _endpoint;
     private readonly string _apiKey;
+    private readonly string _aiModel;
 
-    public ChatService(ChatHistoryService chatHistoryService, string aiProvider, string? apiKey = null)
+    public ChatService(ChatHistoryService chatHistoryService, string aiProvider, string? apiKey = null, string? aiModel = null)
     {
         _chatHistoryService = chatHistoryService;
         _httpClient = new HttpClient();
         _aiProvider = aiProvider;
         _apiKey = apiKey ?? "";
+        _aiModel = aiModel ?? "";
         _endpoint = _aiProvider == "OpenAI" ? "https://api.openai.com/v1/chat/completions" : "http://localhost:11434/api/generate";
     }
 
@@ -52,7 +54,7 @@ public class ChatService
     {
         var requestData = new
         {
-            model = "llama3",
+            model = !string.IsNullOrEmpty(_aiModel) ? _aiModel : "llama3",
             prompt = prompt,
             stream = true
         };
@@ -111,7 +113,7 @@ public class ChatService
 
         var postData = new
         {
-            model = "gpt-3.5-turbo",
+            model = !string.IsNullOrEmpty(_aiModel) ? _aiModel : "gpt-3.5-turbo",
             messages = messages
         };
 

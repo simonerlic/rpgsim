@@ -29,8 +29,12 @@ namespace TextBasedRPG
                 }
             }
 
+            string aiModel = console.Prompt(new TextPrompt<string>("Choose the model to use (e.g. llama3, gpt-4):")
+                        .PromptStyle("aqua")
+                        .AllowEmpty());
+
             var serviceProvider = new ServiceCollection()
-                .AddSingleton<ChatService>(provider => new ChatService(provider.GetService<ChatHistoryService>()!, aiProvider, apiKey))
+                .AddSingleton<ChatService>(provider => new ChatService(provider.GetService<ChatHistoryService>()!, aiProvider, apiKey, aiModel))
                 .AddSingleton<ChatHistoryService>()
                 .BuildServiceProvider();
 
