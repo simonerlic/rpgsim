@@ -50,6 +50,18 @@ public class ChatService
         return narrative; // Return the narrative to the user
     }
 
+    public async Task<string> GetSelfPlayResponse(string prompt)
+    {
+        if (_narrativeAiProvider == "OpenAI")
+        {
+            return await GetOpenAINarrativeResponse(prompt);
+        }
+        else
+        {
+            return await GetOllamaNarrativeResponse(prompt);
+        } 
+    }
+
     private async Task<string> GetNarrativeResponse(string userInput)
     {
         StringBuilder promptBuilder = new StringBuilder();

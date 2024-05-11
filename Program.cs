@@ -1,5 +1,9 @@
 ﻿using Spectre.Console;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using System.Text;
+using System.Net.Http.Json;
+using System.IO;
 
 namespace TextBasedRPG
 {
@@ -29,7 +33,7 @@ namespace TextBasedRPG
                 }
             }
 
-            string aiModel = console.Prompt(new TextPrompt<string>("Choose the model to use (e.g. llama3, gpt-4):")
+            string aiModel = console.Prompt(new TextPrompt<string>("Choose the model to use (e.g., llama3, gpt-4):")
                         .PromptStyle("aqua")
                         .AllowEmpty());
 
@@ -43,31 +47,62 @@ namespace TextBasedRPG
 
             initNotes();
 
+            // Prompt user to choose between playing themselves or AI playing
+            var playMode = console.Prompt(new SelectionPrompt<string>()
+                .Title("Do you want to play the game yourself or let the AI play for you?")
+                .AddChoices(new[] { "Myself", "AI" }));
+
             console.Write(new Panel("[bold yellow]Welcome to the game![/] \nTell me when you are ready to start. Type 'exit' to quit.")
                 .RoundedBorder()
                 .BorderColor(Color.Yellow));
 
-            string input = "";
-            while (input.ToLower() != "exit")
+            if (playMode == "Myself")
             {
-                input = console.Prompt(new TextPrompt<string>("[green]>[/]")
-                    .PromptStyle("aqua"));
+                string input = "";
+                while (input.ToLower() != "exit")
+                {
+                    input = console.Prompt(new TextPrompt<string>("[green]>[/]")
+                        .PromptStyle("aqua"));
 
-                if (input.ToLower() == "exit")
-                    break;
+                    if (input.ToLower() == "exit")
+                        break;
 
-                string response = await AnsiConsole.Status()
-                    .AutoRefresh(true)
-                    .Spinner(Spinner.Known.Default)
-                    .StartAsync("[yellow]Getting response...[/]", async ctx =>
-                    {
-                        return await aiService!.GetResponse(input);
-                    });
+                    string response = await AnsiConsole.Status()
+                        .AutoRefresh(true)
+                        .Spinner(Spinner.Known.Default)
+                        .StartAsync("[yellow]Getting response...[/]", async ctx =>
+                        {
+                            return await aiService!.GetResponse(input);
+                        });
 
-                chatHistory!.AddToHistory(input, response);
-                console.Clear();
-                console.MarkupLine($"[white]{response}[/]");
-                console.WriteLine();
+                    chatHistory!.AddToHistory(input, response);
+                    console.Clear();
+                    console.MarkupLine($"[white]{response}[/]");
+                    console.WriteLine();
+                }
+            }
+            else if (playMode == "AI")
+            {
+                // AI playing loop
+                string aiInput = "start"; // Initial AI input
+                while (aiInput.ToLower() != "exit")
+                {
+                    string aiResponse = await AnsiConsole.Status()
+                        .AutoRefresh(true)
+                        .Spinner(Spinner.Known.Default)
+                        .StartAsync("[yellow]AI is thinking...[/]", async ctx =>
+                        {
+                            return await aiService!.GetResponse(aiInput);
+                        });
+
+                    chatHistory!.AddToHistory(aiInput, aiResponse);
+                    console.Clear();
+                    console.MarkupLine($"[white]{aiResponse}[/]");
+                    console.WriteLine();
+
+                    // Generate next AI input based on the current state or response
+                    aiInput = await GenerateAIInput(aiService, aiResponse); // Implement this method based on your game logic
+                }
             }
         }
 
@@ -99,6 +134,16 @@ namespace TextBasedRPG
   - Exotic Goods Sellers: Eager to sell exotic items.
   - Skill Buyers: Interested in buying services or skills from adventurers.");
             }
+        }
+
+        static async Task<string> GenerateAIInput(ChatService aiService, string aiResponse)
+        {
+            string nextInput = "";
+            nextInput = await aiService!.GetSelfPlayResponse(aiResponse);
+            
+            Console.WriteLine($"AI: {nextInput}");
+
+            return nextInput;
         }
     }
 }
