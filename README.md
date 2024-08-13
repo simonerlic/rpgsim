@@ -29,7 +29,7 @@ Just run InfiniteStory.exe, and follow the prompts to get set up.
 
 ### Running the game (source)
 
-To run the game from source, you will need to have dotnet 8 installed. You can run the game by running the following commands:
+To run the game from source, you will need to have dotnet 8 installed, which you can get from [here](https://learn.microsoft.com/en-us/dotnet/core/install). You can then run the game by executing the following commands:
 
 ```bash
 dotnet restore
